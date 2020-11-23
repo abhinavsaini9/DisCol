@@ -7,12 +7,15 @@ var express      =require("express"),
     discussion   =require("./models/discussion"),
     methodoverride=require("method-override"),
     comment      = require("./models/comment"),
+    MaterialAdd = require("./models/MaterialAdd"),
     flash         =require("connect-flash"),
     User         = require("./models/user"),
+    suggestion   = require("./models/suggestion"),
     seedDB       =require("./seed");
 
 
-var url=process.env.DATABASEURL||"mongodb://localhost/myself_v6";
+//var url=process.env.DATABASEURL||"mongodb://localhost/myself_v6";
+var url="mongodb+srv://rahulraga:dK1zcX73WrDIsuUL@cluster0.cipq8.mongodb.net/<dbname>?retryWrites=true&w=majority";
 //mongoose.connect("mongodb://localhost/myself_v6");
 mongoose.connect(url);
 
@@ -244,6 +247,7 @@ app.get("/register",function(req,res){
 //responsible for user singup logic
 app.post("/register",function(req,res){
     var newUser= new User ({username:req.body.username});
+    
     User.register(newUser,req.body.password,function(err,user){
         if(err){
             console.log(err);
@@ -264,9 +268,13 @@ app.get("/login",function(req,res){
 //login logic
 //app.post("/ogin",middleware,callback)
 app.post("/login",passport.authenticate("local",{
-   successRedirect:"/",
+   failureFlash: true,
    failureRedirect:"/login"
 }),function(req,res){
+    req.flash('success','welcome back');
+    const redirectUrl = req.session.returnTo || '/';
+    delete req.session.returnTo;
+    res.redirect(redirectUrl);
 
 });
 
@@ -324,7 +332,110 @@ app.delete("/col/:id",function(req,res){
     
     });
 
+//====================================
+//adding material
+//====================================
 
+app.get("/material/addMaterial",isModerator,function(req,res){
+    console.log("request for addmaterials page");
+    suggestion.find({},function(err,allsuggestion){
+        if(err){
+            console.log("something went wrong");
+        }else{
+            res.render("material/addMaterial",{suggestion:allsuggestion});
+        }
+    });
+});
+
+app.post("/material/addMaterial",isModerator,function(req,res){
+    var newmat = {linkToTopic: req.body.link,Topic: req.body.Topic};
+    MaterialAdd.create(newmat,function(err,discuss){
+        if(err){
+            console.log(err);
+        }else{
+            //redirect back to the same page
+            res.redirect("/material/addMaterial");
+            console.log(discuss);
+        }
+    })
+
+});
+
+function isModerator(req,res,next){
+    if(req.isAuthenticated()){
+        if(req.user.role === 'moderator'){
+            return next();
+        }
+        req.flash("error","You need to be logged in as moderator to do that");
+        res.redirect("/materials");
+    }
+    else{
+        req.session.returnTo = req.originalUrl;
+        req.flash("error","You need to be logged in to do that");
+        res.redirect("/login");
+    }
+
+}
+
+
+//====================================
+//addsuggestion
+//====================================
+
+app.get("/material/addsuggestions",isLoggedIn,function(req,res){
+    var arrcolors = [ 
+        'rgb(255, 51, 51)', 'rgb(0, 230, 0)', 'rgb(0, 153, 153)', 
+        'rgb(136, 0, 204)', 'rgb(153, 0, 0)', 'rgb(255, 77, 77)' 
+    ]; 
+    var count=0;
+    console.log("request for suggestion page");
+    suggestion.find({},function(err,allsuggestion){
+        if(err){
+            console.log("something went wrong");
+        }else{
+            res.render("material/addsuggestions",{suggestion:allsuggestion,arrcolors:arrcolors,count:count});
+        }
+    });
+});
+
+app.post("/material/addsuggestions",isLoggedIn,function(req,res){
+            var newsug = {text:req.body.suggestion,topic:req.body.topic}
+            suggestion.create(newsug,function(err,suggestion){
+                if(err){
+                    req.flash("error","Something went wrong,Try again!!");
+                    console.log(err);
+                }else{
+                    suggestion.author.username=req.user.username;
+                    suggestion.author.id=req.user._id;
+                    suggestion.save();
+
+                    
+                    
+                    res.redirect("/material/addsuggestions");
+                    req.flash("success","Successfully added suggestion");
+                    console.log(suggestion);
+                }
+            })
+            
+});
+
+//======================================
+//editing and deleting suggestion
+//====================================
+
+
+//comment delet
+app.delete("/material/addsuggestions/:suggestion_id",checkSuggestionOwnership,function(req,res){
+    
+    suggestion.findByIdAndRemove(req.params.suggestion_id,function(err){
+        if(err){
+            res.redirect("back");
+        }else{
+            req.flash("success","Comment deleted");
+            res.redirect("/material/addsuggestions");
+        }
+    });
+});
 
 //====================================
 //isloggedin check
@@ -335,6 +446,7 @@ function isLoggedIn(req, res, next){
         //console.log(User);
     }
     //console.log();
+    req.session.returnTo = req.originalUrl;
     req.flash("error","You need to be logged in to do that");
     res.redirect("/login");
 };
@@ -348,7 +460,7 @@ function checkdiscussionOwnership(req,res,next){
                 res.redirect("back");
             }else{
                 //does the user owned champground
-                if(founddiscussion.author.id.equals(req.user._id)){
+                if(founddiscussion.author.id.equals(req.user._id) || req.user.role === 'moderator'){
                     next();
                 }
                 //otherwise redirect
@@ -373,7 +485,7 @@ function checkCommentOwnership(req,res,next){
                 res.redirect("back");
             }else{
                 //does the user owned comment
-                if(foundComment.author.id.equals(req.user._id)){
+                if(foundComment.author.id.equals(req.user._id) || req.user.role === 'moderator'){
                     next();
                 }
                 //otherwise redirect
@@ -389,11 +501,41 @@ function checkCommentOwnership(req,res,next){
 }
 
 
+function checkSuggestionOwnership(req,res,next){
+    if(req.isAuthenticated()){
+        suggestion.findById(req.params.suggestion_id,function(err,foundsuggestion){
+            if(err){
+                req.flash("error","Champground not found");
+                res.redirect("back");
+            }else{
+                //does the user owned comment
+                if(foundsuggestion.author.id.equals(req.user._id) || req.user.role === 'moderator'){
+                    next();
+                }
+                //otherwise redirect
+                else{
+                    req.flash("error","You dont have permission to do that");
+                    res.redirect("back");
+                }
+            }
+        });
+    }else{
+        res.redirect("back");
+    }
+}
+
 
 app.get("/materials",function(req,res){
-
+    var count=0;
     console.log("request for material page");
-    res.render("material");
+    MaterialAdd.find({},function(err,allmaterial){
+        if(err){
+            console.log("something went wrong")
+        }
+        else{
+            res.render("material",{allmaterial:allmaterial,count:count});
+        }
+    });
 });
 app.get("/materials/1",function(req,res){
 

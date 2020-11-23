@@ -1,6 +1,6 @@
 <%- include('../partials/header lr') -%>
 
-<div class="container-fluid">
+<div class="container-fluid" style="height: calc(100% - 260px);min-height:689px;margin-top:60px;background: linear-gradient(90deg, rgba(0,50,60,1) 5%, rgba(9,114,121,1) 50%, rgba(0,50,60,1) 95%);">
     <div class="row">
         <div class="col-md-3 well " style="background: rgba(26,26,29,0.8);">
             <iframe class=" well" height="220"  src="https://www.youtube.com/embed/nqowUJzG-iM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -19,7 +19,7 @@
                     <p style="font-family: 'Libre Franklin', sans-serif;"><%= discussion.question%></p>
                     <hr id="topicshow" style="width: 60%; align-content: center;border-width: 1px ; border-style: solid; background-color:black; margin-top: 20px; margin-bottom: 10px; ">
                     <p><em style="font-family: 'Roboto Slab', serif; font-weight: 500;">Asked by <%=discussion.author.username %></em></p>
-                    <%if(currentUser && discussion.author.id.equals(currentUser._id)){%>
+                    <%if(currentUser && (discussion.author.id.equals(currentUser._id)||currentUser.role==='moderator')){%>
                         <a class="btn btn-xs btn-warning" href="/discussions/<%=discussion._id%>/edit">Edit</a>
                         <form id="delet-form" action="/discussions/<%=discussion._id%>?_method=DELETE" method="POST">
                             <button class="btn btn-xs btn-danger">Delete</button>
@@ -45,7 +45,7 @@
                                 </p>
 
 
-                                <% if(currentUser && comment.author.id.equals(currentUser._id)){ %>
+                                <% if(currentUser && (comment.author.id.equals(currentUser._id)||currentUser.role==='moderator')){ %>
                                     <a class="btn btn-sm btn-warning" href="/discussions/<%= discussion._id %>/comments/<%=comment._id %>/edit">Edit</a>
                                     <form id="delet-form" action="/discussions/<%= discussion._id %>/comments/<%=comment._id %>?_method=DELETE" method="POST" >
                                         <button class="btn btn-sm btn-danger ">Delete</button>

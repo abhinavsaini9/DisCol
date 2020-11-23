@@ -1,6 +1,6 @@
 <%- include('../partials/header dm') -%>
 
-<div class="container-fluid">
+<div class="container-fluid" style="height: calc(100% - 260px);min-height:689px;margin-top:60px;background: linear-gradient(90deg, rgba(0,50,60,1) 5%, rgba(9,114,121,1) 50%, rgba(0,50,60,1) 95%);">
     <div class="row">
         <div class="col-md-3"></div>
         <div class="col-md-8 well" style="background: rgba(44, 53, 59, 0.5);">
@@ -25,7 +25,7 @@
                     <h4 style="font-weight: 600;  padding-top: 12px; padding-left: 5px; line-height: 1.5; padding-bottom: 9px; font-family: 'Roboto Slab', serif;"><%= allcol.question %></h4>
                 </div>
                 <p >
-                    <a href="/discussions/<%=allcol._id %>" class="btn btn-info" style="font-size: 16px;" >Disscusion</a>
+                    <a href="/discussions/<%=allcol._id %>" class="btn btn-info" style="font-size: 16px;" >Discussion</a>
                 </p>
             </div>
             <% console.log(allcol.topic) %>

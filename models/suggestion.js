@@ -1,8 +1,9 @@
   
 var mongoose= require("mongoose");
 
-var commentSchema= mongoose.Schema({
+var suggestionSchema= mongoose.Schema({
     text:String,
+    topic:String,
     time1:{
         type:String,
         default:new Date().toISOString().slice(0,10)
@@ -17,4 +18,4 @@ var commentSchema= mongoose.Schema({
         }
 });
 
-module.exports =mongoose.model("Comment",commentSchema);
+module.exports =mongoose.model("suggestion",suggestionSchema);
