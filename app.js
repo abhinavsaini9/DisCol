@@ -59,6 +59,12 @@ app.get("/",function(req,res){
     console.log("request for landing page");
     res.render("landing");
 });
+
+app.get("/landing",function(req,res){
+
+    console.log("request for landing page");
+    res.render("landing");
+});
 //=============================================
 //discussion
 //=============================================
