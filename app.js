@@ -372,7 +372,8 @@ function isModerator(req,res,next){
         if(req.user.role === 'moderator'){
             return next();
         }
-        res.redirect("/materials",{error : req.flash('You need to be logged in as moderator to do that')});
+        req.flash("error","You need to be logged in as moderator to do that");
+        res.redirect("/materials");
     }
     else{
         req.session.returnTo = req.originalUrl;
